@@ -8,7 +8,9 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 from langchain_openai import ChatOpenAI
-from langchain_community.chains import RetrievalQA
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import create_retrieval_chain
 
 # ---------------- UI ----------------
 st.set_page_config(page_title="RAG Resume Chatbot")
@@ -68,22 +70,32 @@ if uploaded_files:
         openai_api_key=openai_api_key
     )
 
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        retriever=retriever,
-        return_source_documents=True
+    # Prompt
+    prompt = ChatPromptTemplate.from_template(
+        """You are an HR assistant.
+
+Use the context below to answer the question about candidates.
+
+Context:
+{context}
+
+Question:
+{input}
+
+Answer clearly with candidate details.
+"""
     )
 
-    query = st.text_input("Ask about candidates")
+    # Chains
+    document_chain = create_stuff_documents_chain(llm, prompt)
+    retrieval_chain = create_retrieval_chain(retriever, document_chain)
+
+    # User Query
+    query = st.text_input("🔍 Ask about candidates")
 
     if query:
-        with st.spinner("Searching candidates..."):
-            result = qa_chain.invoke({"query": query})
+        with st.spinner("Searching resumes..."):
+            response = retrieval_chain.invoke({"input": query})
 
             st.subheader("🧠 Answer")
-            st.write(result["result"])
-
-            st.subheader("📌 Matching Resume Content")
-            for doc in result["source_documents"]:
-                st.write("---")
-                st.write(doc.page_content[:500])
+            st.write(response["answer"])
