@@ -8,20 +8,18 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import create_retrieval_chain
+from langchain.chains import RetrievalQA  # ✅ Stable import
 
 # ---------------- UI ----------------
 st.set_page_config(page_title="RAG Resume Chatbot")
 st.title("📄 RAG Resume Chatbot")
-st.write("Upload multiple resumes and ask about candidates")
+st.write("Upload resumes and search candidates")
 
 # ---------------- API KEY ----------------
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
 if not openai_api_key:
-    st.error("❌ OpenAI API key not found. Add it in Streamlit Secrets.")
+    st.error("❌ Add OPENAI_API_KEY in Streamlit Secrets")
     st.stop()
 
 # ---------------- FILE UPLOAD ----------------
@@ -59,7 +57,7 @@ def process_pdfs(files):
 
 # ---------------- MAIN ----------------
 if uploaded_files:
-    st.success(f"{len(uploaded_files)} resumes uploaded successfully!")
+    st.success(f"{len(uploaded_files)} resumes uploaded")
 
     vector_db = process_pdfs(uploaded_files)
 
@@ -70,32 +68,16 @@ if uploaded_files:
         openai_api_key=openai_api_key
     )
 
-    # Prompt
-    prompt = ChatPromptTemplate.from_template(
-        """You are an HR assistant.
-
-Use the context below to answer the question about candidates.
-
-Context:
-{context}
-
-Question:
-{input}
-
-Answer clearly with candidate details.
-"""
+    qa_chain = RetrievalQA.from_chain_type(
+        llm=llm,
+        retriever=retriever
     )
 
-    # Chains
-    document_chain = create_stuff_documents_chain(llm, prompt)
-    retrieval_chain = create_retrieval_chain(retriever, document_chain)
-
-    # User Query
     query = st.text_input("🔍 Ask about candidates")
 
     if query:
-        with st.spinner("Searching resumes..."):
-            response = retrieval_chain.invoke({"input": query})
+        with st.spinner("Searching..."):
+            result = qa_chain.run(query)
 
             st.subheader("🧠 Answer")
-            st.write(response["answer"])
+            st.write(result)
