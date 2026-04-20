@@ -1,6 +1,5 @@
 streamlit
-langchain
-langchain-core
+langchain==0.1.20
 langchain-community
 langchain-openai
 langchain-text-splitters
