@@ -8,7 +8,7 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
 from langchain_openai import ChatOpenAI
-from langchain.chains import RetrievalQA
+from langchain_community.chains import RetrievalQA
 
 # ---------------- UI ----------------
 st.set_page_config(page_title="RAG Resume Chatbot")
