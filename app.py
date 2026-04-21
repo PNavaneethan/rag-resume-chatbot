@@ -84,8 +84,10 @@ if uploaded_files:
     retriever = vector_db.as_retriever(search_kwargs={"k": 5})
 
     llm = ChatOpenAI(
+        model="gpt-3.5-turbo",
         temperature=0,
         openai_api_key=openai_api_key
+    )
     )
 
     qa_chain = RetrievalQA.from_chain_type(
