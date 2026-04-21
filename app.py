@@ -99,20 +99,20 @@ if uploaded_files:
     query = st.text_input("🔍 Ask about candidates")
     if query:
         with st.spinner("Searching..."):
-        docs = retriever.get_relevant_documents(query)
+            docs = retriever.get_relevant_documents(query)
 
-        context = " ".join([doc.page_content for doc in docs[:3]])
+            context = " ".join([doc.page_content for doc in docs[:3]])
 
-        prompt = f"""
-        Based on the resumes below, answer the question.
+            prompt = f"""
+            Based on the resumes below, answer the question.
 
-        Resumes:
-        {context}
+            Resumes:
+            {context}
 
-        Question: {query}
-        """
+            Question: {query}
+            """
 
-        result = qa_pipeline(prompt)[0]["generated_text"]
+            result = qa_pipeline(prompt)[0]["generated_text"]
 
-        st.subheader("🧠 Answer")
-        st.write(result)
+            st.subheader("🧠 Answer")
+            st.write(result)
