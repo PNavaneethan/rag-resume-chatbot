@@ -7,7 +7,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
-from langchain_openai import ChatOpenAI
+
 from langchain.chains import RetrievalQA  # ✅ Stable import
 
 # ---------------- UI ----------------
@@ -83,12 +83,13 @@ if uploaded_files:
 
     retriever = vector_db.as_retriever(search_kwargs={"k": 2})
 
-    llm = ChatOpenAI(
-        model="gpt-3.5-turbo",
-        temperature=0,
-        openai_api_key=openai_api_key
+    from transformers import pipeline
+    # Load local model
+    qa_pipeline = pipeline(
+        "text-generation",
+        model="distilgpt2",
+        max_new_tokens=200
     )
-    
 
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
@@ -97,13 +98,21 @@ if uploaded_files:
 
     query = st.text_input("🔍 Ask about candidates")
     if query:
-        try:
-            with st.spinner("Searching..."):
-                result = qa_chain.run(query)
-                
-                st.subheader("🧠 Answer")
-                st.write(result)
+        with st.spinner("Searching..."):
+        docs = retriever.get_relevant_documents(query)
 
-        except Exception as e:
-            st.error("❌ API limit reached or error occurred")
-            st.write(str(e))
+        context = " ".join([doc.page_content for doc in docs[:3]])
+
+        prompt = f"""
+        Based on the resumes below, answer the question.
+
+        Resumes:
+        {context}
+
+        Question: {query}
+        """
+
+        result = qa_pipeline(prompt)[0]["generated_text"]
+
+        st.subheader("🧠 Answer")
+        st.write(result)
