@@ -81,7 +81,7 @@ if uploaded_files:
 
     vector_db = process_pdfs(uploaded_files)
 
-    retriever = vector_db.as_retriever(search_kwargs={"k": 5})
+    retriever = vector_db.as_retriever(search_kwargs={"k": 2})
 
     llm = ChatOpenAI(
         model="gpt-3.5-turbo",
@@ -96,10 +96,14 @@ if uploaded_files:
     )
 
     query = st.text_input("🔍 Ask about candidates")
-
     if query:
-        with st.spinner("Searching..."):
-            result = qa_chain.run(query)
+        try:
+            with st.spinner("Searching..."):
+                result = qa_chain.run(query)
+                
+                st.subheader("🧠 Answer")
+                st.write(result)
 
-            st.subheader("🧠 Answer")
-            st.write(result)
+        except Exception as e:
+            st.error("❌ API limit reached or error occurred")
+            st.write(str(e))
